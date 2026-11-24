@@ -40,6 +40,7 @@ async def loja_ver(interaction: discord.Interaction):
     name="gerenciar", description="[Admin] Adicionar ou Remover emblema da loja"
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(acao="O que fazer?", preco="Preço (Necessário para adicionar)")
 @app_commands.choices(
     acao=[

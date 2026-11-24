@@ -18,6 +18,8 @@ SEUS COMANDOS DISPONÍVEIS:
 
 
 def chamar_groq_manual(user_message):
+    if not GROQ_API_KEY:
+        return "O chat ainda não está configurado. Os comandos do bot continuam disponíveis."
     url = "https://api.groq.com/openai/v1/chat/completions"
     headers = {
         "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -35,10 +37,14 @@ def chamar_groq_manual(user_message):
     }
 
     try:
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(
+            url, headers=headers, json=data, timeout=(5, 20), allow_redirects=False
+        )
         if response.status_code == 200:
             return response.json()["choices"][0]["message"]["content"]
         else:
-            return f"Erro na API Groq: {response.status_code} - {response.text}"
+            print(f"Falha na Groq: HTTP {response.status_code}")
+            return "O chat está indisponível no momento. Tente novamente mais tarde."
     except Exception as e:
-        return f"Erro de conexão: {e}"
+        print(f"Falha na Groq: {type(e).__name__}")
+        return "O chat está indisponível no momento. Tente novamente mais tarde."
