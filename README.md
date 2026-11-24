@@ -13,17 +13,20 @@ O projeto roda em um homelab. Esta versão organiza o código em módulos e docu
 - **Administração:** gestão de emblemas, códigos e saldos; anúncios de códigos e sessões de cinema; envio de embeds a partir de JSON do Discohook.
 - **Chat:** respostas a menções e mensagens diretas usando a API da Groq. Essa parte depende de uma chave própria; a economia usa SQLite local.
 
-Exemplos de uso:
+## Usando no Discord
 
-```text
-/recompensa diaria
-/loja ver
-/perfil
-/destaque definir emblemas:Participante, Cinéfilo
-/economia transferir usuario:@colega valor:25
-```
+| Comando | O que aparece ou acontece |
+| --- | --- |
+| `/perfil` | Perfil com saldo, bio e emblemas em destaque. |
+| `/loja ver` | Emblemas disponíveis, com botões para comprar usando moedas do bot. |
+| `/recompensa diaria` | Recebe a recompensa do dia ou informa o tempo restante. |
+| `/emblemas` | Abre a coleção com navegação entre páginas. |
+| `/destaque definir emblemas:Participante, Cinéfilo` | Seleciona emblemas já possuídos para mostrar no perfil. |
+| `/economia transferir usuario:@colega valor:25` | Transfere 25 moedas para outra pessoa. |
 
-São exemplos ilustrativos, não capturas de atividade real. A lista completa está em [Comandos](docs/COMANDOS.md).
+Os nomes de emblemas e o destinatário acima são exemplos. A lista completa, incluindo parâmetros e comandos administrativos, está em [Comandos](docs/COMANDOS.md).
+
+Para uma apresentação curta, comece pelo perfil, abra a loja e termine na coleção de emblemas. Esse percurso mostra os comandos, os componentes interativos e a persistência dos dados. O [roteiro de capturas](docs/DEMONSTRACAO.md) orienta a preparação das imagens reais para este README.
 
 ## Tecnologias
 
