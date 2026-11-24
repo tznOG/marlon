@@ -1,9 +1,42 @@
 import sqlite3
+from contextlib import closing
 from .config import DATABASE_PATH
 
 
 def connect():
     return sqlite3.connect(DATABASE_PATH)
+
+
+def purchase_badge(user_id, name, expected_price):
+    """Validate the live offer and commit a purchase as one transaction."""
+    with closing(connect()) as db, db:
+        db.execute("BEGIN IMMEDIATE")
+        offer = db.execute(
+            "SELECT preco,na_loja,url_imagem FROM emblemas WHERE nome=?", (name,)
+        ).fetchone()
+        if not offer or not offer[1]:
+            raise ValueError("Este emblema não está mais disponível na loja.")
+        price, _, image_url = offer
+        if price < 0 or price != expected_price:
+            raise ValueError(
+                "O preço mudou. Abra /loja ver novamente antes de comprar."
+            )
+        db.execute("INSERT OR IGNORE INTO usuarios(user_id) VALUES (?)", (user_id,))
+        if db.execute(
+            "SELECT 1 FROM inventario WHERE user_id=? AND emblema_nome=?",
+            (user_id, name),
+        ).fetchone():
+            raise ValueError(f"⚠️ Já possui **{name}**.")
+        changed = db.execute(
+            "UPDATE usuarios SET saldo=saldo-? WHERE user_id=? AND saldo>=?",
+            (price, user_id, price),
+        ).rowcount
+        if not changed:
+            raise ValueError("❌ Saldo insuficiente.")
+        db.execute(
+            "INSERT INTO inventario(user_id,emblema_nome) VALUES (?,?)", (user_id, name)
+        )
+        return image_url
 
 
 def init_db():

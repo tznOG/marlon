@@ -17,6 +17,7 @@ from ..groups import grp_criar, grp_dar, grp_remover, grp_emblema, grp_codigo
 
 @grp_criar.command(name="emblema", description="[Admin] Criar novo emblema")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     descricao="Descrição do emblema (Opcional)",
     data="Data criação (DD/MM/AAAA) (Opcional)",
@@ -54,6 +55,7 @@ async def criar_emblema(
 
 @grp_criar.command(name="codigo", description="[Admin] Criar código")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     limite="-1 = infinito, 1 = único", validade="DD/MM/AAAA HH:MM (Vazio = Eterno)"
 )
@@ -103,6 +105,7 @@ async def criar_codigo(
     name="json", description="[Admin] Criar Embed usando JSON do Discohook"
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(canal="Canal para enviar (Opcional, padrão é o atual)")
 async def criar_json(
     interaction: discord.Interaction, canal: discord.TextChannel = None
@@ -115,6 +118,7 @@ async def criar_json(
     description="[Admin] Anuncia um código com template de emblema",
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     titulo="Título do anúncio (Ex: Evento Especial)",
     mencionar_cargo="Mencionar o cargo? (Padrão: Não)",
@@ -159,6 +163,7 @@ async def criar_anuncio_codigo(
 
 @grp_criar.command(name="cineminha", description="[Admin] Cria o anúncio do Cineminha")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(
     edicao="Número da edição",
     filme="Nome do filme",
@@ -236,6 +241,7 @@ async def criar_cineminha(
     name="emblema", description="[Admin] Dar emblema (Deixe usuário vazio para TODOS)"
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.autocomplete(emblema=emblema_autocomplete_admin)
 async def dar_emblema(
     interaction: discord.Interaction, emblema: str, usuario: discord.Member = None
@@ -314,6 +320,7 @@ async def dar_emblema(
 
 @grp_dar.command(name="moedas", description="[Admin] Adicionar moedas")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 async def dar_moedas(
     interaction: discord.Interaction, usuario: discord.Member, qtd: int
 ):
@@ -337,6 +344,7 @@ async def dar_moedas(
     description="[Admin] Remover emblema (Deixe usuário vazio para TODOS)",
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.autocomplete(emblema=emblema_autocomplete_admin)
 async def remover_emblema(
     interaction: discord.Interaction, emblema: str, usuario: discord.Member = None
@@ -384,6 +392,7 @@ async def remover_emblema(
 
 @grp_remover.command(name="moedas", description="[Admin] Remover moedas")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 async def remover_moedas(
     interaction: discord.Interaction, usuario: discord.Member, qtd: int
 ):
@@ -405,6 +414,7 @@ async def remover_moedas(
 
 @grp_emblema.command(name="editar", description="[Admin] Editar emblema")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.describe(nova_data="Formato: 23 de junho de 2023")
 @app_commands.autocomplete(emblema_atual=emblema_autocomplete)
 async def emblema_editar(
@@ -484,6 +494,7 @@ async def emblema_editar(
 
 @grp_emblema.command(name="excluir", description="[Admin] Excluir emblema")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 @app_commands.autocomplete(emblema=emblema_autocomplete)
 async def emblema_excluir(interaction: discord.Interaction, emblema: str):
     conn = connect()
@@ -501,6 +512,7 @@ async def emblema_excluir(interaction: discord.Interaction, emblema: str):
 
 @grp_codigo.command(name="lista", description="[Admin] Listar códigos")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 async def codigo_lista(interaction: discord.Interaction):
     conn = connect()
     c = conn.cursor()
@@ -535,11 +547,15 @@ async def codigo_lista(interaction: discord.Interaction):
     view = GenericListView(
         lista_fmt, "Gerenciamento de Códigos", interaction, items_per_page=5
     )
-    await interaction.response.send_message(embed=view.create_embed(), view=view)
+    view.require_admin = True
+    await interaction.response.send_message(
+        embed=view.create_embed(), view=view, ephemeral=True
+    )
 
 
 @grp_codigo.command(name="desativar", description="[Admin] Desativar código")
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 async def codigo_desativar(interaction: discord.Interaction, codigo: str):
     conn = connect()
     c = conn.cursor()
@@ -560,6 +576,7 @@ async def codigo_desativar(interaction: discord.Interaction, codigo: str):
     name="excluir", description="[Admin] Excluir código permanentemente"
 )
 @app_commands.default_permissions(administrator=True)
+@app_commands.checks.has_permissions(administrator=True)
 async def codigo_excluir(interaction: discord.Interaction, codigo: str):
     conn = connect()
     c = conn.cursor()

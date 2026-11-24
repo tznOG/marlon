@@ -2,9 +2,29 @@ import discord
 import math
 import json
 from .config import MOEDA_EMOJI
-from .database import connect, check_user_exists
+from .database import connect, purchase_badge
 from .runtime import bot
 from .helpers import formatar_moeda
+
+
+class OwnerView(discord.ui.View):
+    """Keep controls attached to the requester and recheck sensitive views."""
+
+    async def interaction_check(self, interaction):
+        if interaction.user.id != self.interaction.user.id:
+            await interaction.response.send_message(
+                "Abra o comando para usar seus próprios controles.", ephemeral=True
+            )
+            return False
+        if (
+            getattr(self, "require_admin", False)
+            and not interaction.permissions.administrator
+        ):
+            await interaction.response.send_message(
+                "❌ Você não tem permissão para isso.", ephemeral=True
+            )
+            return False
+        return True
 
 
 class JSONModal(discord.ui.Modal, title="Colar JSON do Discohook"):
@@ -21,6 +41,11 @@ class JSONModal(discord.ui.Modal, title="Colar JSON do Discohook"):
         self.canal_alvo = canal_alvo
 
     async def on_submit(self, interaction: discord.Interaction):
+        if not interaction.permissions.administrator:
+            await interaction.response.send_message(
+                "❌ Você não tem permissão para isso.", ephemeral=True
+            )
+            return
         try:
             data = json.loads(self.json_text.value)
             content = data.get("content", None)
@@ -47,7 +72,7 @@ class JSONModal(discord.ui.Modal, title="Colar JSON do Discohook"):
             )
 
 
-class ProfilePaginationView(discord.ui.View):
+class ProfilePaginationView(OwnerView):
     def __init__(
         self,
         full_inventory,
@@ -129,7 +154,7 @@ class ProfilePaginationView(discord.ui.View):
         await interaction.response.edit_message(embed=self.create_embed(), view=self)
 
 
-class GenericListView(discord.ui.View):
+class GenericListView(OwnerView):
     def __init__(self, data, title, interaction, items_per_page=20):
         super().__init__(timeout=60)
         self.data = data
@@ -188,53 +213,24 @@ class BuyButton(discord.ui.Button):
         self.preco = preco
 
     async def callback(self, interaction: discord.Interaction):
-        check_user_exists(interaction.user.id)
-        conn = connect()
-        c = conn.cursor()
-        c.execute("SELECT saldo FROM usuarios WHERE user_id=?", (interaction.user.id,))
-        saldo = c.fetchone()[0]
-        c.execute(
-            "SELECT 1 FROM inventario WHERE user_id=? AND emblema_nome=?",
-            (interaction.user.id, self.nome_emblema),
-        )
-        if c.fetchone():
-            await interaction.response.send_message(
-                f"⚠️ Já possui **{self.nome_emblema}**.", ephemeral=True
-            )
-            conn.close()
-            return
-        if saldo < self.preco:
-            await interaction.response.send_message(
-                f"❌ Saldo insuficiente.", ephemeral=True
-            )
-            conn.close()
-            return
-
         try:
-            c.execute(
-                "UPDATE usuarios SET saldo = saldo - ? WHERE user_id=?",
-                (self.preco, interaction.user.id),
+            url = purchase_badge(interaction.user.id, self.nome_emblema, self.preco)
+        except ValueError as error:
+            await interaction.response.send_message(str(error), ephemeral=True)
+            return
+        except Exception as error:
+            print(f"Erro na compra: {type(error).__name__}")
+            await interaction.response.send_message(
+                "Não foi possível concluir a compra.", ephemeral=True
             )
-            c.execute(
-                "INSERT INTO inventario (user_id, emblema_nome) VALUES (?, ?)",
-                (interaction.user.id, self.nome_emblema),
-            )
-            conn.commit()
-            c.execute(
-                "SELECT url_imagem FROM emblemas WHERE nome=?", (self.nome_emblema,)
-            )
-            url = c.fetchone()[0]
-            embed = discord.Embed(
-                title="Compra Realizada!",
-                description=f"Comprou **{self.nome_emblema}**!",
-                color=0x00FF00,
-            )
-            embed.set_thumbnail(url=url)
-            await interaction.response.send_message(embed=embed, ephemeral=True)
-        except Exception as e:
-            await interaction.response.send_message(f"Erro: {e}", ephemeral=True)
-        finally:
-            conn.close()
+            return
+        embed = discord.Embed(
+            title="Compra Realizada!",
+            description=f"Comprou **{self.nome_emblema}**!",
+            color=0x00FF00,
+        )
+        embed.set_thumbnail(url=url)
+        await interaction.response.send_message(embed=embed, ephemeral=True)
 
 
 class ShopView(discord.ui.View):
@@ -311,7 +307,7 @@ class RankingSelect(discord.ui.Select):
         await interaction.response.edit_message(embed=embed)
 
 
-class RankingView(discord.ui.View):
+class RankingView(OwnerView):
     def __init__(self, interaction):
         super().__init__(timeout=60)
         self.interaction = interaction

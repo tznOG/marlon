@@ -84,26 +84,20 @@ async def on_message(message):
                 if len(resposta_final) > 2000:
                     resposta_final = resposta_final[:1997] + "..."
 
-                await message.reply(resposta_final)
+                await message.reply(
+                    resposta_final, allowed_mentions=discord.AllowedMentions.none()
+                )
 
             except Exception as e:
-                print(f"Erro na IA (Requests): {e}")
+                print(f"Erro na IA (Requests): {type(e).__name__}")
 
                 # LOG NO CANAL DO DISCORD
                 canal_logs = bot.get_channel(ID_CANAL_LOGS)
                 if canal_logs:
                     try:
-                        erro_fmt = "".join(
-                            traceback.format_exception(type(e), e, e.__traceback__)
-                        )
-                        if len(erro_fmt) > 1900:
-                            erro_fmt = erro_fmt[:1900] + "..."
-
                         await canal_logs.send(
-                            f"⚠️ **ERRO NA IA (REQUESTS)**\n"
-                            f"Usuário: {message.author}\n"
-                            f"Mensagem: `{user_message}`\n"
-                            f"```py\n{erro_fmt}\n```"
+                            f"⚠️ Erro no chat: {type(e).__name__}",
+                            allowed_mentions=discord.AllowedMentions.none(),
                         )
                     except:
                         pass
